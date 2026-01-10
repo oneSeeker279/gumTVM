@@ -171,6 +171,10 @@ module_range_t InstructionTracerManager::get_module_range() const {
     return this->module_range;
 }
 
+void InstructionTracerManager::set_plt_range(std::pair<size_t, size_t> range) {
+    plt_range = range;
+}
+
 std::pair<size_t, size_t> InstructionTracerManager::get_plt_range() const {
     return this->plt_range;
 }

@@ -23,6 +23,8 @@ void trip_doCommand_enter(GumInvocationContext * ic, gpointer user_data) {
         LOGD("FridaStalker::frida_on_enter : %d", gettid());
         trace_is_running = true;
         self->set_trace_tid(gettid());
+        // 设置主 trace 模块的plt范围（此so plt表被抹去，需要手动设置）
+        self->set_plt_range(std::pair<size_t, size_t>(0x20EA4, 0x21DD0));
         // 添加其他需要trace 的模块
         self->add_trace_other_module_entry("libsgsecuritybodyso-6.6.230703.so", false);
         self->add_trace_other_module_entry("libsgmiddletierso-6.6.230703.so", false);

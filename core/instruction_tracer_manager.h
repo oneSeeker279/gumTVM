@@ -39,6 +39,7 @@ public:
     std::map<std::string, bool>& get_trace_other_modules();
     std::map<std::string, std::pair<size_t, size_t>>& get_trace_other_modules_range();
     [[nodiscard]] module_range_t get_module_range() const;
+    void set_plt_range(std::pair<size_t, size_t> range);
     [[nodiscard]] std::pair<size_t, size_t> get_plt_range() const;
     bool run_attach();
     [[nodiscard]] GumInvocationListener* get_common_invocation_listener() const;

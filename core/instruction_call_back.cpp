@@ -7,6 +7,8 @@
 #include <dlfcn.h>
 
 #include <frida-gum.h>
+#include <xdl.h>
+
 #include <iomanip>
 #include <ios>
 #include <iosfwd>
@@ -520,26 +522,24 @@ void instruction_callback(GumCpuContext *context, void *user_data) {
         get_register_value(insn_info->detail_copy->arm64.operands[0].reg, ctx, jmp_addr);
     }
     if (jmp_addr != 0) {
-        Dl_info dlInfo;
-        if(dladdr(reinterpret_cast<const void *>(jmp_addr), &dlInfo) && dlInfo.dli_fname != nullptr){
-            const char * soName = strrchr(dlInfo.dli_fname, '/') + 1;
-            const char * symName = dlInfo.dli_sname;
-            if (symName == nullptr) {
-                std::ostringstream oss;
-                oss << "sub_" << std::hex << (jmp_addr - (uintptr_t)dlInfo.dli_fbase);
-                symName = oss.str().c_str();
+        if ((jmp_addr - self->get_module_range().base) <= self->get_plt_range().second &&
+            (jmp_addr - self->get_module_range().base) >= self->get_plt_range().first) {
+            self->is_plt_jmp = true;
+        } else {
+            xdl_info_t xdl_info;
+            void *cache = nullptr;
+            if (xdl_addr(reinterpret_cast<void*>(jmp_addr), &xdl_info, &cache)) {
+                const char * soName = strrchr(xdl_info.dli_fname, '/') + 1;
+                const char * symName = xdl_info.dli_sname;
+                if (symName == nullptr) {
+                    std::ostringstream oss;
+                    oss << "sub_" << std::hex << (jmp_addr - (uintptr_t)xdl_info.dli_fbase);
+                    symName = oss.str().c_str();
+                }
+                call_info << "call addr: " << std::hex << jmp_addr << " [" << soName << "!" << symName << "]";
             }
-            call_info << "call addr: " << std::hex << jmp_addr << " [" << soName << "!" << symName << "]";
         }
     }
-    // 开启打印 plt表的外部函数调用会很耗时
-    /*
-    else if (jmp_addr != 0 &&
-        (jmp_addr - self->get_module_range().base) <= self->get_plt_range().second &&
-        (jmp_addr - self->get_module_range().base) >= self->get_plt_range().first) {
-        self->is_plt_jmp = true;
-    }
-    */
 
     // trace信息写入文件
     if (!post_info.str().empty()) {
